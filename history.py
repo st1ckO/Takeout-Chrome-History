@@ -35,10 +35,12 @@ HTML_TEMPLATE = """
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; padding: 0; background: #f4f4f4; }
         .history-container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        .history-item { padding: 10px; border-bottom: 1px solid #ddd; }
-        .history-item a { text-decoration: none; font-weight: bold; }
+        .history-item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; align-items: center; }
+        .history-item a { text-decoration: none; font-weight: bold; margin-left: 10px; }
         .history-item a:hover { text-decoration: underline; }
         .history-date { font-weight: bold; margin-top: 15px; margin-bottom: 15px; }
+        .history-time { white-space: pre; } /* Ensures the tab space is respected */
+        .history-domain { font-size: 0.8em; color: gray; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -54,8 +56,14 @@ HTML_TEMPLATE = """
                     <div class="history-date">{{ ns.current_date }}</div>
                 {% endif %}
                 <div class="history-item">
+                    <span class="history-time">{{ item.get('time', 'Unknown Time') }}</span>
                     <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a>
-                    - <small>{{ item.get('time', 'Unknown Time') }}</small>
+                    <!-- Extract and display the domain -->
+                    {% set url = item.get('url', '') %}
+                    {% if '://' in url %}
+                        {% set domain = url.split('://')[1].split('/')[0] %}
+                        <span class="history-domain">{{ domain }}</span>
+                    {% endif %}
                 </div>
             {% endfor %}
         {% endif %}
