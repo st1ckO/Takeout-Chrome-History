@@ -1,6 +1,7 @@
 import json
 import os
 from flask import Flask, render_template_string
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -13,7 +14,14 @@ def load_history():
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
-HISTORY_DATA = load_history()
+def convert_time_usec(history_data):
+    for item in history_data.get('Browser History', []):
+        if 'time_usec' in item:
+            time_sec = item['time_usec'] / 1_000_000
+            item['time_usec'] = datetime.fromtimestamp(time_sec).strftime('%Y-%b-%d %I:%M:%S (%A)')
+    return history_data
+
+HISTORY_DATA = convert_time_usec(load_history())
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
