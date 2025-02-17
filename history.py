@@ -18,7 +18,9 @@ def convert_time_usec(history_data):
     for item in history_data.get('Browser History', []):
         if 'time_usec' in item:
             time_sec = item['time_usec'] / 1_000_000
-            item['time_usec'] = datetime.fromtimestamp(time_sec).strftime('%Y-%b-%d %I:%M:%S (%A)')
+            dt = datetime.fromtimestamp(time_sec)
+            item['date'] = dt.strftime('%A, %B %d, %Y')
+            item['time'] = dt.strftime('%I:%M:%S%p')
     return history_data
 
 HISTORY_DATA = convert_time_usec(load_history())
@@ -34,8 +36,9 @@ HTML_TEMPLATE = """
         body { font-family: Arial, sans-serif; margin: 20px; padding: 0; background: #f4f4f4; }
         .history-container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
         .history-item { padding: 10px; border-bottom: 1px solid #ddd; }
-        .history-item a { text-decoration: none; color: #007bff; }
+        .history-item a { text-decoration: none; font-weight: bold; }
         .history-item a:hover { text-decoration: underline; }
+        .history-date { font-weight: bold; margin-top: 15px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -44,18 +47,22 @@ HTML_TEMPLATE = """
         {% if items == 'empty' %}
             <div>No history items found.</div>
         {% else %}
+            {% set ns = namespace(current_date='') %}
             {% for item in items %}
-            <div class="history-item">
-                <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a> 
-                - <small>{{ item.get('time_usec', 'Unknown Time') }}</small>
-            </div>
+                {% if item.date != ns.current_date %}
+                    {% set ns.current_date = item.date %}
+                    <div class="history-date">{{ ns.current_date }}</div>
+                {% endif %}
+                <div class="history-item">
+                    <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a>
+                    - <small>{{ item.get('time', 'Unknown Time') }}</small>
+                </div>
             {% endfor %}
         {% endif %}
     </div>
 </body>
 </html>
 """
-
 
 @app.route('/')
 def index():
