@@ -26,23 +26,138 @@ HISTORY_DATA = convert_time_usec(load_history())
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrome History Viewer</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 90%; width: 95%; height: 95%; background: #f4f4f4; }
-        .history-container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .history-item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; align-items: center; }
-        .history-item a { text-decoration: none; font-weight: bold; margin-left: 10px; display: flex; align-items: center; flex: 1; min-width: 0; }
-        .history-item a:hover { text-decoration: underline; }
-        .history-date { font-weight: bold; margin-top: 15px; margin-bottom: 15px; }
-        .history-time { font-size: 0.8em; color: gray; margin-right: 20px; } 
-        .history-favicon { width: 16px; height: 16px; margin-right: 5px; flex-shrink: 0; } 
-        .history-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-        .history-domain { font-size: 0.8em; color: gray; margin-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+        :root {
+            --background-color: #202124; 
+            --text-color: #e8eaed; 
+            --accent-color: #8ab4f8; 
+            --border-color: #5f6368;
+            --container-bg: #2d2e30; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 90%;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            color: var(--text-color);
+            margin: 20px 0;
+        }
+
+        .history-container {
+            width: 95%; 
+            max-width: 1200px; 
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            width: 100%; 
+        }
+
+        .history-item a {
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1
+            min-width: 0;
+            color: var(--accent-color);
+        }
+
+        .history-item a:hover {
+            text-decoration: underline;
+        }
+
+        .history-date {
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+
+        .history-time {
+            font-size: 0.8em;
+            color: #9aa0a6; 
+            margin-right: 20px;
+            flex-shrink: 0; 
+        }
+
+        .history-favicon {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+
+        .history-title {
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1; 
+            min-width: 0;
+            color: var(--text-color);
+        }
+
+        .history-domain {
+            font-size: 0.8em;
+            color: #9aa0a6; 
+            margin-left: 10px;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .history-container {
+                width: 100%; 
+                padding: 15px;
+            }
+
+            .history-item {
+                flex-direction: row; 
+                align-items: center;
+            }
+
+            .history-time {
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+
+            .history-domain {
+                margin-left: 10px;
+                margin-top: 0;
+            }
+        }
     </style>
 </head>
 <body>
