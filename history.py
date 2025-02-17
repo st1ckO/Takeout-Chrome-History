@@ -16,11 +16,10 @@ def load_history():
 
 def convert_time_usec(history_data):
     for item in history_data.get('Browser History', []):
-        if 'time_usec' in item:
-            time_sec = item['time_usec'] / 1_000_000
-            dt = datetime.fromtimestamp(time_sec)
-            item['date'] = dt.strftime('%A, %B %d, %Y')
-            item['time'] = dt.strftime('%I:%M:%S%p')
+        time_sec = item['time_usec'] / 1_000_000
+        dt = datetime.fromtimestamp(time_sec)
+        item['date'] = dt.strftime('%A, %B %d, %Y')
+        item['time'] = dt.strftime('%I:%M:%S%p')
     return history_data
 
 HISTORY_DATA = convert_time_usec(load_history())
@@ -39,8 +38,9 @@ HTML_TEMPLATE = """
         .history-item a { text-decoration: none; font-weight: bold; margin-left: 10px; }
         .history-item a:hover { text-decoration: underline; }
         .history-date { font-weight: bold; margin-top: 15px; margin-bottom: 15px; }
-        .history-time { white-space: pre; } /* Ensures the tab space is respected */
-        .history-domain { font-size: 0.8em; color: gray; margin-left: 5px; }
+        .history-time { font-size: 0.8em; color: gray; margin-right: 20px; } 
+        .history-domain { font-size: 0.8em; color: gray; margin-left: 10px; }
+        .history-favicon { width: 16px; height: 16px; margin-right: 3px; } 
     </style>
 </head>
 <body>
@@ -49,6 +49,7 @@ HTML_TEMPLATE = """
         {% if items == 'empty' %}
             <div>No history items found.</div>
         {% else %}
+            <!-- Track the current date to group items by date -->
             {% set ns = namespace(current_date='') %}
             {% for item in items %}
                 {% if item.date != ns.current_date %}
@@ -56,9 +57,10 @@ HTML_TEMPLATE = """
                     <div class="history-date">{{ ns.current_date }}</div>
                 {% endif %}
                 <div class="history-item">
-                    <span class="history-time">{{ item.get('time', 'Unknown Time') }}</span>
+                    <span class="history-time">{{ item.get('time', 'No Time') }}</span>
+                    <img src="{{ item.favicon_url }}" alt="XX" class="history-favicon">
                     <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a>
-                    <!-- Extract and display the domain -->
+                    <!-- Extract and display the domain name -->
                     {% set url = item.get('url', '') %}
                     {% if '://' in url %}
                         {% set domain = url.split('://')[1].split('/')[0] %}
