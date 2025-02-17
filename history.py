@@ -33,14 +33,16 @@ HTML_TEMPLATE = """
 <body>
     <div class="history-container">
         <h2>Chrome History</h2>
-        {% for items in history %}
+        {% if items == 'empty' %}
+            <div>No history items found.</div>
+        {% else %}
             {% for item in items %}
-                <div class="history-item">
-                    <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a> 
-                    - <small>{{ item.get('time_usec', 'Unknown Time') }}</small>
-                </div>
+            <div class="history-item">
+                <a href="{{ item.get('url', '#') }}" target="_blank">{{ item.get('title', 'No Title') }}</a> 
+                - <small>{{ item.get('time_usec', 'Unknown Time') }}</small>
+            </div>
             {% endfor %}
-        {% endfor %}
+        {% endif %}
     </div>
 </body>
 </html>
@@ -49,8 +51,8 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def index():
-    print(HISTORY_DATA)
-    return render_template_string(HTML_TEMPLATE, history=HISTORY_DATA)
+    history_items = HISTORY_DATA.get('Browser History', 'empty')
+    return render_template_string(HTML_TEMPLATE, items=history_items)
 
 if __name__ == '__main__':
     app.run(debug=True)
