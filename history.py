@@ -85,6 +85,7 @@ MONTH_TEMPLATE = """
             flex-direction: column;
             align-items: center;
             margin-bottom: 20px;
+            overflow-x: hidden;
         }
 
         h2 {
