@@ -1,9 +1,7 @@
 import json
 import os
-from flask import Flask, render_template_string
 from datetime import datetime
-
-app = Flask(__name__)
+from jinja2 import Template
 
 # Load Chrome history JSON
 HISTORY_FILE = "History.json"  # Replace with your actual file path
@@ -21,6 +19,8 @@ def convert_time_usec(history_data):
         item['date'] = dt.strftime('%A, %B %d, %Y')
         item['time'] = dt.strftime('%I:%M:%S%p')
     return history_data
+
+#TODO: Put group by date logic here to avoid unnecessary Jinja2 processing (leads to lots of blank lines in the output)
 
 HISTORY_DATA = convert_time_usec(load_history())
 
@@ -201,10 +201,14 @@ HTML_TEMPLATE = """
 </html>
 """
 
-@app.route('/')
-def index():
+if __name__ == "__main__":
+    # Render the template with the history data
+    template = Template(HTML_TEMPLATE)
     history_items = HISTORY_DATA.get('Browser History', 'empty')
-    return render_template_string(HTML_TEMPLATE, items=history_items)
+    rendered_html = template.render(items=history_items)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    # Save the rendered HTML to a file
+    with open("output.html", "w", encoding="utf-8") as file:
+        file.write(rendered_html)
+
+    print("HTML file generated successfully as 'output.html'.")
