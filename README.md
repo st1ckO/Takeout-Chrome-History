@@ -19,7 +19,7 @@ Ensure you meet all requirements by following this [setup guide](https://gist.gi
 ### 2. Download Chrome History from Google Takeout
 If you haven't already downloaded your history data. You can follow [this guide](https://support.google.com/accounts/answer/3024190?hl=en) from Google. You'll only need the Chrome History data which gives a JSON file.
 
-![alt text](https://i.imgur.com/wcOMMKi.png)
+![Google Takeout Chrome History](https://i.imgur.com/wcOMMKi.png)
 
 Save the JSON file (Usually, it's ```History.json```) in the same directory as the extracted repository.
 
@@ -38,3 +38,6 @@ Enter a valid name for the output folder. Example:
 ```bash
 Enter the name of the output folder: my_history
 ```
+
+### 4. Open the index.html file
+![index.html in my_history folder](https://i.imgur.com/oA0v7oM.png)
