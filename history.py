@@ -3,8 +3,7 @@ import os
 from datetime import datetime
 from jinja2 import Template
 
-# Load Chrome history JSON
-HISTORY_FILE = "History.json"  # Replace with your actual file path
+HISTORY_FILE = input("Enter the path to your Chrome history JSON file: ")
 
 def load_history():
     if not os.path.exists(HISTORY_FILE):
@@ -12,7 +11,14 @@ def load_history():
         exit(1)
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         print(f"Loading history data from '{HISTORY_FILE}'...")
-        return json.load(f)
+        history_data = json.load(f)
+        if not history_data:
+            print("Error: JSON is empty.")
+            exit(1)
+        elif 'Browser History' not in history_data:
+            print("Error: JSON does not contain 'Browser History'.")
+            exit(1)
+        return history_data
 
 def convert_time_usec(history_data):
     print("Converting time_usec to human-readable format...")
@@ -314,8 +320,14 @@ INDEX_TEMPLATE = """
 """
 
 if __name__ == "__main__":
+    output_dir = input("Enter the name of the output folder: ").strip()
+    
+    # Validate the output folder name
+    if not output_dir:
+        print("Error: Output folder name cannot be empty.")
+        exit(1)
+    
     # Create a directory for the output files
-    output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
     # Render the index page
@@ -339,4 +351,4 @@ if __name__ == "__main__":
             with open(os.path.join(year_dir, f"{month}.html"), "w", encoding="utf-8") as file:
                 file.write(rendered_month)
 
-    print("HTML files generated successfully in the 'output' directory.")
+    print(f"HTML files generated successfully in the '{output_dir}' directory.")
