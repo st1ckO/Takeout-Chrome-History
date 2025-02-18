@@ -8,21 +8,43 @@ HISTORY_FILE = "History.json"  # Replace with your actual file path
 
 def load_history():
     if not os.path.exists(HISTORY_FILE):
-        return []
+        print(f"Error: File '{HISTORY_FILE}' not found.")
+        exit(1)
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        print(f"Loading history data from '{HISTORY_FILE}'...")
         return json.load(f)
 
 def convert_time_usec(history_data):
-    for item in history_data.get('Browser History', []):
+    print("Converting time_usec to human-readable format...")
+    for item in history_data.get('Browser History', {}):
         time_sec = item['time_usec'] / 1_000_000
         dt = datetime.fromtimestamp(time_sec)
         item['date'] = dt.strftime('%A, %B %d, %Y')
         item['time'] = dt.strftime('%I:%M:%S%p')
+        item['month'] = dt.month
+        item['year'] = dt.year
     return history_data
 
-#TODO: Put group by date logic here to avoid unnecessary Jinja2 processing (leads to lots of blank lines in the output)
+def extract_domain(history_data):
+    print("Extracting domain names...")
+    for item in history_data.get('Browser History', {}):
+        url = item.get('url', '')
+        if '://' in url:
+            domain = url.split('://')[1].split('/')[0]
+            item['domain'] = domain
+    return history_data
 
-HISTORY_DATA = convert_time_usec(load_history())
+def group_by_date(history_data):
+    print("Grouping history items by date...")
+    grouped_data = {}
+    for item in history_data.get('Browser History', {}):
+        date = item['date']
+        if date not in grouped_data:
+            grouped_data[date] = []
+        grouped_data[date].append(item)
+    return grouped_data if grouped_data else None
+
+HISTORY_DATA = group_by_date(extract_domain(convert_time_usec(load_history())))
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -162,21 +184,10 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <h2>Chrome History</h2>
-    {% if items == 'empty' %}
+    {% if items == None %}
         <div>No history items found.</div>
     {% else %}
-        <!-- Group items by date -->
-        {% set grouped_items = {} %}
-        {% for item in items %}
-            {% set date = item.date %}
-            {% if date not in grouped_items %}
-                {% set _ = grouped_items.update({date: []}) %}
-            {% endif %}
-            {% set _ = grouped_items[date].append(item) %}
-        {% endfor %}
-
-        <!-- Render each date group in a separate container -->
-        {% for date, items_in_date in grouped_items.items() %}
+        {% for date, items_in_date in items.items() %}
             <div class="history-container">
                 <div class="history-date">{{ date }}</div>
                 {% for item in items_in_date %}
@@ -186,12 +197,7 @@ HTML_TEMPLATE = """
                         <a href="{{ item.get('url', '#') }}" target="_blank">
                             <span class="history-title">{{ item.get('title', 'No Title') }}</span>
                         </a>
-                        <!-- Extract and display the domain name -->
-                        {% set url = item.get('url', '') %}
-                        {% if '://' in url %}
-                            {% set domain = url.split('://')[1].split('/')[0] %}
-                            <span class="history-domain">{{ domain }}</span>
-                        {% endif %}
+                        <span class="history-domain">{{ item.get('domain', '') }}</span>
                     </div>
                 {% endfor %}
             </div>
@@ -204,7 +210,7 @@ HTML_TEMPLATE = """
 if __name__ == "__main__":
     # Render the template with the history data
     template = Template(HTML_TEMPLATE)
-    history_items = HISTORY_DATA.get('Browser History', 'empty')
+    history_items = HISTORY_DATA
     rendered_html = template.render(items=history_items)
 
     # Save the rendered HTML to a file
