@@ -16,18 +16,18 @@ def load_history():
 
 def convert_time_usec(history_data):
     print("Converting time_usec to human-readable format...")
-    for item in history_data.get('Browser History', {}):
+    for item in history_data.get('Browser History', []):
         time_sec = item['time_usec'] / 1_000_000
         dt = datetime.fromtimestamp(time_sec)
         item['date'] = dt.strftime('%A, %B %d, %Y')
         item['time'] = dt.strftime('%I:%M:%S%p')
-        item['month'] = dt.month
         item['year'] = dt.year
+        item['month'] = dt.month  
     return history_data
 
 def extract_domain(history_data):
     print("Extracting domain names...")
-    for item in history_data.get('Browser History', {}):
+    for item in history_data.get('Browser History', []):
         url = item.get('url', '')
         if '://' in url:
             domain = url.split('://')[1].split('/')[0]
@@ -37,22 +37,30 @@ def extract_domain(history_data):
 def group_by_date(history_data):
     print("Grouping history items by date...")
     grouped_data = {}
-    for item in history_data.get('Browser History', {}):
-        date = item['date']
-        if date not in grouped_data:
-            grouped_data[date] = []
-        grouped_data[date].append(item)
+    for item in history_data.get('Browser History', []):
+        year = item['year']
+        month = item['month']
+        date = item['date']  
+        
+        if year not in grouped_data:
+            grouped_data[year] = {}
+        if month not in grouped_data[year]:
+            grouped_data[year][month] = {}
+        if date not in grouped_data[year][month]:
+            grouped_data[year][month][date] = []
+        
+        grouped_data[year][month][date].append(item)
     return grouped_data if grouped_data else None
 
 HISTORY_DATA = group_by_date(extract_domain(convert_time_usec(load_history())))
 
-HTML_TEMPLATE = """
+MONTH_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome History Viewer</title>
+    <title>{{ year }}/{{ month_name }}</title>
     <style>
         :root {
             --background-color: #202124; 
@@ -67,12 +75,10 @@ HTML_TEMPLATE = """
             font-size: 90%;
             background-color: var(--background-color);
             color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-bottom: 20px;
         }
 
         h2 {
@@ -82,7 +88,6 @@ HTML_TEMPLATE = """
 
         .history-container {
             width: 95%; 
-            max-width: 1200px; 
             background-color: var(--container-bg);
             padding: 20px;
             border-radius: 8px;
@@ -105,7 +110,6 @@ HTML_TEMPLATE = """
             white-space: nowrap; 
             overflow: hidden;
             text-overflow: ellipsis;
-            flex: 1
             min-width: 0;
             color: var(--accent-color);
         }
@@ -151,70 +155,188 @@ HTML_TEMPLATE = """
             white-space: nowrap; 
             overflow: hidden;
             text-overflow: ellipsis;
-            flex: 1
             min-width: 0;
         }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            width: 100%;
+            margin-left: 20px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            padding: 10px 0; 
+        }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
+        .header-title {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .back-button {
+            background-color: var(--accent-color);
+            color: var(--background-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
 
-            .history-container {
-                width: 100%; 
-                padding: 15px;
-            }
-
-            .history-item {
-                flex-direction: row; 
-                align-items: center;
-            }
-
-            .history-time {
-                margin-right: 10px;
-                margin-bottom: 0;
-            }
-
-            .history-domain {
-                margin-left: 10px;
-                margin-top: 0;
-            }
+        .back-button:hover {
+            background-color: var(--border-color);
         }
     </style>
 </head>
 <body>
-    <h2>Chrome History</h2>
-    {% if items == None %}
-        <div>No history items found.</div>
-    {% else %}
-        {% for date, items_in_date in items.items() %}
-            <div class="history-container">
-                <div class="history-date">{{ date }}</div>
-                {% for item in items_in_date %}
-                    <div class="history-item">
-                        <span class="history-time">{{ item.get('time', 'No Time') }}</span>
-                        <img src="{{ item.favicon_url }}" alt="XX" class="history-favicon">
-                        <a href="{{ item.get('url', '#') }}" target="_blank">
-                            <span class="history-title">{{ item.get('title', 'No Title') }}</span>
-                        </a>
-                        <span class="history-domain">{{ item.get('domain', '') }}</span>
-                    </div>
-                {% endfor %}
+    <div class="header-container">
+        <a href="../index.html" class="back-button">Back to Index</a>
+        <span class="header-title">Chrome History - {{ year }}/{{ month_name }}</span>
+    </div>
+    {% for date, items_in_day in items.items() %}
+        <div class="history-container">
+        <div class="history-date">{{ date }}</div>
+        {% for item in items_in_day %}
+            <div class="history-item">
+                <span class="history-time">{{ item.get('time', 'No Time') }}</span>
+                <img src="{{ item.favicon_url }}" alt="XX" class="history-favicon">
+                <a href="{{ item.get('url', '#') }}" target="_blank">
+                    <span class="history-title">{{ item.get('title', 'No Title') }}</span>
+                </a>
+                <span class="history-domain">{{ item.get('domain', '') }}</span>
             </div>
         {% endfor %}
-    {% endif %}
+        </div>
+    {% endfor %}
+    <a href="../index.html" class="back-button">Back to Index</a>
+</body>
+</html>
+"""
+
+INDEX_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome History Index</title>
+    <style>
+        :root {
+            --background-color: #202124; 
+            --text-color: #e8eaed; 
+            --accent-color: #8ab4f8; 
+            --border-color: #5f6368;
+            --container-bg: #2d2e30; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 90%;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: left;
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: var(--text-color);
+            margin: 20px 0;
+        }
+
+        .year-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; 
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .year-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px; 
+            flex-wrap: wrap; 
+        }
+
+        .year-container strong {
+            font-size: 1.2em;
+            min-width: 80px; 
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .month-links {
+            display: flex;
+            gap: 10px; 
+            flex-wrap: wrap; 
+            flex: 1;
+        }
+
+        .year-links a {
+            color: var(--accent-color);
+            text-decoration: none;
+            padding: 10px 20px; 
+            border: 1px solid var(--border-color);
+            border-radius: 8px; 
+            font-size: 1.1em; 
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .year-links a:hover {
+            background-color: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <h2>Chrome History Index</h2>
+    <div class="year-links">
+        {% for year, months in items.items() %}
+            <div class="year-container">
+                <strong>{{ year }}</strong>
+                <div class="month-links">
+                    {% for month in months.keys() %}
+                        <a href="{{ year }}/{{ month }}.html">{{ datetime(year, month, 1).strftime('%B') }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>
 """
 
 if __name__ == "__main__":
-    # Render the template with the history data
-    template = Template(HTML_TEMPLATE)
-    history_items = HISTORY_DATA
-    rendered_html = template.render(items=history_items)
+    # Create a directory for the output files
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Save the rendered HTML to a file
-    with open("output.html", "w", encoding="utf-8") as file:
-        file.write(rendered_html)
+    # Render the index page
+    template = Template(INDEX_TEMPLATE)
+    rendered_index = template.render(items=HISTORY_DATA, datetime=datetime)
+    with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as file:
+        file.write(rendered_index)
 
-    print("HTML file generated successfully as 'output.html'.")
+    # Render individual month pages
+    month_template = Template(MONTH_TEMPLATE)
+    for year, months in HISTORY_DATA.items():
+        year_dir = os.path.join(output_dir, str(year))
+        os.makedirs(year_dir, exist_ok=True)
+        for month, days in months.items():
+            month_name = datetime(year, month, 1).strftime('%B')
+            rendered_month = month_template.render(
+                year=year,
+                month_name=month_name,
+                items=days
+            )
+            with open(os.path.join(year_dir, f"{month}.html"), "w", encoding="utf-8") as file:
+                file.write(rendered_month)
+
+    print("HTML files generated successfully in the 'output' directory.")
